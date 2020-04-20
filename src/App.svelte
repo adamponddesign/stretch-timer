@@ -11,84 +11,75 @@
 		<input id="rest-time"bind:value={restTimeInput} type="number">
 	</div>
 
-
-
-	<div class="button-container">
-		<button disabled={timerRunning || pause} on:click={startStopwatch}>Start</button>
-		<button on:click={pauseStopwatch}>{pause ? "Continue" : "Pause"}</button>
-		<button on:click={resetStopwatch}>Reset Timer</button>
+	{#if stretchHoldTime && restTimeInput}
+	<div class="timer-display">
+		<div>Stretch for <span>{timeDisplay}</span>seconds</div>
+		<div>Rest for <span>{restTime}</span>seconds</div>
 	</div>
 
-	<div>Stretch Timer = {mins} : {secs < 10 ? 0 : ''}{secs}</div>
-	<div>Rest Timer = {restTime ? restTime : 0}</div>
+	<div class="button-container">
+		<button on:click={startStretchCountdown}>Start</button>
+		<!-- <button disabled={!timerRunning || pause} on:click={pauseStopwatch}>{pause ? "Continue" : "Pause"}</button> -->
+		<!-- <button on:click={resetStopwatch}>Reset</button> -->
+	</div>
+	{/if}
 
-	<div class="message">{message}</div>
+
 </main>
 
 <script>
 
-let stopwatchValue = 0
+
 let interval
 let intervalRest
-let pause = false
 let timerRunning = false
 let stretchHoldTime
-let message = ''
 let secs = 0
-let restTime = '0'
 let restTimeInput
 
-$: restTime = restTimeInput
-$: mins = Math.floor((stopwatchValue % 3600) / 60)
-$: secs = Math.floor(stopwatchValue % 60)
+$: timeDisplay = stretchHoldTime || ''
+$: restTime = restTimeInput || ''
 
-const startStopwatch = () => {
-	message = 'Stretch'
-	timerRunning = true
-	pause = false
-	interval = setInterval(function(){ stopwatchValue += 1 }, 1000);
-}
-const pauseStopwatch = (restTime) => {
-	if (stopwatchValue === 0) {
-		return
-	}
-	if (pause) {
-		startStopwatch()
-	} else {
-		timerRunning = false
-		message = 'Timer Paused'
-		clearInterval(interval)
-		pause = true
-	}
+$: restInterval = restTime * 1000
+
+$: console.log(restInterval)
+
+const startStretchCountdown = () => {
+	interval = setInterval(function(){ timeDisplay -= 1 }, 1000);
 }
 
-const resetStopwatch = () => {
-	message = ''
-	timerRunning = false
-	pause = false
+const stopStretchCountdown = () => {
 	clearInterval(interval)
-	stopwatchValue = 0
+}
+
+const startRestCountdown = () => {
+	intervalRest = setInterval(function(){ restTime -= 1 }, 1000);
+}
+
+const stopRestCountdown = () => {
+	clearInterval(intervalRest)
 }
 
 
-$: if (secs === stretchHoldTime) {
-	restTimerStartCountdown()
+const resetStretchCountdown = () => {
+	timeDisplay = stretchHoldTime
+}
+const resetRestCountdown = () => {
+	timeDisplay = stretchHoldTime
+	restInterval = restTime * 1000
+}
+
+$: if (timeDisplay === 0) {
+	stopStretchCountdown()
+	startRestCountdown()
+	setTimeout(resetStretchCountdown, restInterval)
 }
 
 $: if (restTime === 0) {
-		clearInterval(intervalRest)
-		startStopwatch()
-		restTime = restTimeInput
+		stopRestCountdown()
+		startStretchCountdown()
+		setTimeout(resetRestCountdown, restInterval)
 	}
-
-const restTimerStartCountdown = () => {
-	message = 'rest'
-	pauseStopwatch()
-	intervalRest = setInterval(function(){ restTime -= 1 }, 1000);
-	
-}
-
-
 
 </script>
 
@@ -127,5 +118,18 @@ const restTimerStartCountdown = () => {
 	.message {
 		font-size: 30px;
 		color: red;
+	}
+
+	span {
+		color: red;
+		font-size: 60px;
+	}
+
+	.timer-display {
+		text-align: center;
+	}
+
+	.timer-display div {
+		width: 100%;
 	}
 </style>
